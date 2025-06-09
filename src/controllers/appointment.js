@@ -67,7 +67,7 @@ export async function create(req, res) {
 export async function getList(req, res) {
   const userId = req.user?.userId ?? '';
 
-  if (req.user.role !== 'ADMIN' ) {
+  if (req.user.role !== 'ADMIN') {
     const [query] = await db.query("SELECT * FROM appointments WHERE userId = ?", [userId]);
     return res.send(query);
   }
