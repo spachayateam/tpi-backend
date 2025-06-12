@@ -5,6 +5,7 @@ import session from "cookie-session";
 import bodyParser from "body-parser";
 
 import router from "./routes/index.js";
+import { ejecutarVencimientoCita } from "./tasks/vencimientos.js";
 
 const app = express();
 
@@ -40,3 +41,5 @@ app.use((req, res) => {
 });
 
 app.listen(process.env.PORT || 3000, () => console.log("Server started on port 3000"));
+
+ejecutarVencimientoCita();
