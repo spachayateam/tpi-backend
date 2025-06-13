@@ -8,4 +8,4 @@ Este proyecto forma parte del Trabajo Práctico Integrador (TPI) y corresponde a
 - Express.js
 - MySQL
 - phpMyAdmin (para administración de la base de datos)
-- node-cron (para tareas programadas)
+- node-cron (para tareas programadas como la reserva desde el calendario)
