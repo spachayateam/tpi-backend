@@ -11,6 +11,7 @@ const pool = await mysql.createConnection({
 });
 
 try {
+
   pool.execute(
     `CREATE TABLE IF NOT EXISTS users (
       id INT AUTO_INCREMENT PRIMARY KEY,
@@ -60,21 +61,6 @@ try {
   );
 
   pool.execute(`
-  CREATE TABLE IF NOT EXISTS servicios (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    categoria VARCHAR(255) NOT NULL,
-    precio INT NOT NULL,
-    descripcion VARCHAR(255) NOT NULL,
-    imagen VARCHAR(255) NOT NULL,
-    professionalId int NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (professionalId) REFERENCES professional(id)
-  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci
-`);
-
-
-  pool.execute(`
   CREATE TABLE IF NOT EXISTS professional (
     id INT AUTO_INCREMENT PRIMARY KEY,
     email VARCHAR(255) NOT NULL,
@@ -86,6 +72,20 @@ try {
     role VARCHAR(20) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci
+`);
+
+  pool.execute(`
+  CREATE TABLE IF NOT EXISTS servicios (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    categoria VARCHAR(255) NOT NULL,
+    precio INT NOT NULL,
+    descripcion VARCHAR(255) NOT NULL,
+    imagen VARCHAR(255) NOT NULL,
+    professionalId int NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (professionalId) REFERENCES professional(id)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci
 `);
 
