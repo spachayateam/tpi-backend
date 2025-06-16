@@ -1,3 +1,4 @@
+import { sendConfirmationEmail } from "../helper/email.js";
 import crypto from "crypto";
 import { DateTime } from "luxon";
 
@@ -74,11 +75,23 @@ export async function create(req, res) {
         .status(400)
         .send({ message: "Failed to register appointment" });
 
+      // Enviar comprobante por email
+        await sendConfirmationEmail(userFound.email, {
+       name,
+       date,
+       time,
+       professional,
+       duration,
+       payment_method,
+       token,
+        });
+
+
     const [query] = await db.query("SELECT * FROM appointments WHERE id = ?", [
       exec.insertId,
     ]);
 
-    return res.send(query[0]);
+    return res.send({ message: "Turno guardado y comprobante enviado exitosamente" });
   } catch (err) {
     console.error(err);
     return res.status(500).send({ error: "Internal server error" });
