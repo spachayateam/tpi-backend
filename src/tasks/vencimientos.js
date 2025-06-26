@@ -3,16 +3,27 @@ import db from "../config/connection.js";
 
 export const ejecutarVencimientoCita = async () => {
   cron.schedule("00 00 * * *", async () => {
-    // actualizar appointments a vencido si la columna date y el rango de la columna time son anteriores al día de hoy
+    console.log("Ejecutando el cron para vencimientos");
+    
     const [query] = await db.query(
-      "SELECT * FROM appointments WHERE state = 'ATENDIDO' AND DATE(date) < CURDATE() AND TIME(time) < CURTIME()"
+      `select id from appointments
+        where state = 'PENDIENTE'
+        and concat(date, ' ', str_to_date(substring_index(time, ' - ', -1), '%H:%i')) <= now();
+      `
     );
-  });
 
-//   select * from appointments as a
-// where a.date < curdate()
-// 	and STR_TO_DATE(SUBSTRING_INDEX(a.time, ' -', 1), '%H:%i') < CURTIME()
-// ORDER BY 
-//     a.date ASC, 
-//     STR_TO_DATE(SUBSTRING_INDEX(a.time, ' -', 1), '%H:%i') ASC;
+    if (!query.length) return;
+
+    const ids = query.map((q) => q.id);
+
+    console.log({ ids });
+
+    const [exec] = await db.execute(
+      `update appointments
+        set state = 'VENCIDO'
+        where id in (${ids});`
+    );
+
+    console.log(exec);
+  });
 };

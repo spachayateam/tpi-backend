@@ -1,8 +1,8 @@
-import { sendConfirmationEmail } from "../helper/email.js";
 import crypto from "crypto";
 import { DateTime } from "luxon";
 
 import db from "../config/connection.js";
+import { sendConfirmationEmail } from "../helper/email.js";
 
 export async function create(req, res) {
   const userId = req.user?.userId ?? "";
@@ -22,6 +22,7 @@ export async function create(req, res) {
     const duration = req.body?.duration;
     const mode = req.body?.mode;
     const payment_method = req.body?.payment_method;
+    const professionalId = req.body?.professionalId;
 
     if (
       !date ||
@@ -46,8 +47,8 @@ export async function create(req, res) {
 
     // evitar registro de turnos repetidos
     const [qtyTurno] = await db.query(
-      "SELECT * FROM appointments WHERE mode = ? and state = 'PENDIENTE'",
-      [mode]
+      "SELECT * FROM appointments WHERE mode = ? and state = 'PENDIENTE' AND userId = ?",
+      [mode, userId]
     );
     if (qtyTurno.length > 0)
       return res
@@ -55,7 +56,7 @@ export async function create(req, res) {
         .send({ message: "No se puede registrar un turno repetido" });
 
     const [exec] = await db.execute(
-      "INSERT INTO appointments (userId, name, phone_number, date, time, professional, duration, mode, payment_method, token) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+      "INSERT INTO appointments (userId, name, phone_number, date, time, professional, professionalId, duration, mode, payment_method, token) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
       [
         userId,
         name,
@@ -63,6 +64,7 @@ export async function create(req, res) {
         date,
         time,
         professional,
+        professionalId,
         duration,
         mode,
         payment_method,
@@ -75,35 +77,45 @@ export async function create(req, res) {
         .status(400)
         .send({ message: "Failed to register appointment" });
 
-      // Enviar comprobante por email
-        await sendConfirmationEmail(userFound.email, {
-       name,
-       date,
-       time,
-       professional,
-       duration,
-       payment_method,
-       token,
-        });
-
+    // Enviar comprobante por Email
+    await sendConfirmationEmail(userFound.email, {
+      name,
+      date,
+      time,
+      professional,
+      duration,
+      mode,
+      payment_method,
+      token,
+    });
 
     const [query] = await db.query("SELECT * FROM appointments WHERE id = ?", [
       exec.insertId,
     ]);
 
-    return res.send({ message: "Turno guardado y comprobante enviado exitosamente" });
+    return res.send(query[0]);
   } catch (err) {
     console.error(err);
     return res.status(500).send({ error: "Internal server error" });
   }
 }
 
+export async function getShifts(req, res) {
+  const [query] = "SELECT * FROM appointments";
+  return res.send(query);
+}
+
 export async function getList(req, res) {
   const userId = req.user?.userId ?? "";
+  
+  const { nextAppointments } = req.query;
+  console.log({ nextAppointments, userId })
 
-  if (req.user.role === 'PROFESSIONAL') {
+  if (req.user.role === "PROFESSIONAL") {
     const [query] = await db.query(
-      "SELECT * FROM appointments a WHERE professionalId = ? order by date asc, STR_TO_DATE(SUBSTRING_INDEX(a.time, ' -', 1), '%H:%i') ASC",
+      `SELECT * FROM appointments a WHERE a.professionalId = ? ${
+        nextAppointments === "1" ? "and a.date >= CURDATE() and state = 'PENDIENTE'" : "and a.state in ('PENDIENTE', 'ATENDIDO')"
+      } ORDER BY a.date ASC, a.time ASC;`,
       [userId]
     );
     return res.send(query);
@@ -125,7 +137,9 @@ export async function getList(req, res) {
 
 export async function getServices(req, res) {
   try {
-    const [query] = await db.query("SELECT s.*, p.name as professional FROM servicios s join professional p on s.professionalId = p.id");
+    const [query] = await db.query(
+      "SELECT s.*, p.name as professional FROM servicios s join professional p on s.professionalId = p.id"
+    );
     return res.send(query);
   } catch (err) {
     console.error(err);
@@ -192,4 +206,42 @@ export async function remove(req, res) {
     console.error(err);
     return res.status(500).send({ error: "Internal server error" });
   }
+}
+
+export async function getHistorial(req, res) {
+  try {
+    const userId = req.user?.userId ?? "";
+
+    const [query] = await db.query(
+      "SELECT appointments.*, users.name, users.email, users.id AS userId FROM appointments JOIN users ON appointments.userId = users.id WHERE appointments.professionalId = ?",
+      [userId]
+    );
+    return res.send(query);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).send({ error: "Internal server error" });
+  }
+}
+
+export async function markAsAttended(req, res) {
+  const token = req.params?.turnoToken;
+
+  if (!token) return res.status(400).send({ message: "Missing token" });
+
+  const [query] = await db.query("SELECT * FROM appointments WHERE token = ?", [
+    token,
+  ]);
+
+  if (!query.length) return res.status(400).send({ message: "Invalid token" });
+
+  const [exec] = await db.execute(
+    "UPDATE appointments SET state = 'ATENDIDO' WHERE token = ?",
+    [token]
+  );
+  if (!exec.affectedRows)
+    return res
+      .status(400)
+      .send({ message: "Failed to mark appointment as attended" });
+
+  return res.send({ message: "Appointment marked as attended successfully" });
 }

@@ -74,7 +74,7 @@ export async function getAllProfessionals(req, res) {
     try {
         const isADMIN = req.headers?.role === 'ADMIN';
         if (isADMIN) {
-            const [query] = await db.query("SELECT * FROM professional");
+            const [query] = await db.query("SELECT age, created_at, id, name, phone, role, section, updated_at FROM professional");
             return res.send(query);
         }
         return res.send("Invalid token");

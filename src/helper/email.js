@@ -14,14 +14,13 @@ export async function sendConfirmationEmail(to, turno) {
     to,
     subject: "Confirmación de turno - SPA Sentirse Bien",
     html: `
-     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">
-       <div style="background-color: #4CAF50; color: white; padding: 20px; text-align: center; display: flex; align-items: center; justify-content: center; gap: 15px;">
-         <div>
-           <h1 style="margin: 0;">SPA Sentirse Bien</h1>
-           <p style="margin: 5px 0 0;">Confirmación de turno</p>
-         </div>
-       </div>
-     </div>
+       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">
+         <div style="background-color: #4CAF50; color: white; padding: 20px; text-align: center; display: flex; align-items: center; justify-content: center; gap: 15px;">
+            <div>
+             <h1 style="margin: 0;">SPA Sentirse Bien</h1>
+             <p style="margin: 5px 0 0;">Confirmación de turno</p>  
+            </div>
+       </div> 
 
         <div style="padding: 20px; color: #333;">
           <p>Hola <strong>${turno.name}</strong>,</p>
@@ -33,6 +32,10 @@ export async function sendConfirmationEmail(to, turno) {
                 <td style="padding: 8px; border: 1px solid #ddd;">${turno.professional}</td>
               </tr>
               <tr>
+                <td style="padding: 8px; border: 1px solid #ddd;"><strong>Servicio:</strong></td>
+                <td style="padding: 8px; border: 1px solid #ddd;">${turno.mode}</td>
+              </tr>
+              <tr>
                 <td style="padding: 8px; border: 1px solid #ddd;"><strong>Fecha:</strong></td>
                 <td style="padding: 8px; border: 1px solid #ddd;">${turno.date}</td>
               </tr>
@@ -42,7 +45,7 @@ export async function sendConfirmationEmail(to, turno) {
               </tr>
               <tr>
                 <td style="padding: 8px; border: 1px solid #ddd;"><strong>Duración:</strong></td>
-                <td style="padding: 8px; border: 1px solid #ddd;">${turno.duration} minutos</td>
+                <td style="padding: 8px; border: 1px solid #ddd;">${turno.duration} </td>
               </tr>
               <tr>
                 <td style="padding: 8px; border: 1px solid #ddd;"><strong>Método de pago:</strong></td>
