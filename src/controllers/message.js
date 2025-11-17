@@ -23,4 +23,3 @@ export async function createMessage(req, res) {
     return res.status(500).send({ error: "Internal server error" });
   }
 }
-

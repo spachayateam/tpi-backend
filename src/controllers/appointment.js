@@ -53,7 +53,7 @@ export async function create(req, res) {
     if (qtyTurno.length > 0)
       return res
         .status(400)
-        .send({ message: "No se puede registrar un turno repetido" });
+        .send({ message: "turno guardado" });
 
     const [exec] = await db.execute(
       "INSERT INTO appointments (userId, name, phone_number, date, time, professional, professionalId, duration, mode, payment_method, token) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
@@ -77,17 +77,18 @@ export async function create(req, res) {
         .status(400)
         .send({ message: "Failed to register appointment" });
 
-    // Enviar comprobante por Email
-    await sendConfirmationEmail(userFound.email, {
-      name,
-      date,
-      time,
-      professional,
-      duration,
-      mode,
-      payment_method,
-      token,
-    });
+      // Enviar comprobante por Email
+        await sendConfirmationEmail(userFound.email, {
+       name,
+       date,
+       time,
+       professional,
+       duration,
+       mode,
+       payment_method,
+       token,
+       });
+
 
     const [query] = await db.query("SELECT * FROM appointments WHERE id = ?", [
       exec.insertId,
@@ -101,21 +102,16 @@ export async function create(req, res) {
 }
 
 export async function getShifts(req, res) {
-  const [query] = "SELECT * FROM appointments";
+  const [query] = "SELECT * FROM appointments"
   return res.send(query);
 }
 
 export async function getList(req, res) {
   const userId = req.user?.userId ?? "";
-  
-  const { nextAppointments } = req.query;
-  console.log({ nextAppointments, userId })
 
-  if (req.user.role === "PROFESSIONAL") {
+  if (req.user.role === 'PROFESSIONAL') {
     const [query] = await db.query(
-      `SELECT * FROM appointments a WHERE a.professionalId = ? ${
-        nextAppointments === "1" ? "and a.date >= CURDATE() and state = 'PENDIENTE'" : "and a.state in ('PENDIENTE', 'ATENDIDO')"
-      } ORDER BY a.date ASC, a.time ASC;`,
+      "SELECT * FROM appointments a WHERE a.professionalId = ? AND a.date >= CURDATE() ORDER BY a.date ASC, a.time ASC;",
       [userId]
     );
     return res.send(query);
@@ -137,9 +133,7 @@ export async function getList(req, res) {
 
 export async function getServices(req, res) {
   try {
-    const [query] = await db.query(
-      "SELECT s.*, p.name as professional FROM servicios s join professional p on s.professionalId = p.id"
-    );
+    const [query] = await db.query("SELECT s.*, p.name as professional FROM servicios s join professional p on s.professionalId = p.id");
     return res.send(query);
   } catch (err) {
     console.error(err);
@@ -217,31 +211,9 @@ export async function getHistorial(req, res) {
       [userId]
     );
     return res.send(query);
-  } catch (err) {
+  }
+  catch (err) {
     console.error(err);
     return res.status(500).send({ error: "Internal server error" });
   }
-}
-
-export async function markAsAttended(req, res) {
-  const token = req.params?.turnoToken;
-
-  if (!token) return res.status(400).send({ message: "Missing token" });
-
-  const [query] = await db.query("SELECT * FROM appointments WHERE token = ?", [
-    token,
-  ]);
-
-  if (!query.length) return res.status(400).send({ message: "Invalid token" });
-
-  const [exec] = await db.execute(
-    "UPDATE appointments SET state = 'ATENDIDO' WHERE token = ?",
-    [token]
-  );
-  if (!exec.affectedRows)
-    return res
-      .status(400)
-      .send({ message: "Failed to mark appointment as attended" });
-
-  return res.send({ message: "Appointment marked as attended successfully" });
 }
